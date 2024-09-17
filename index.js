@@ -12,6 +12,7 @@ const jwt = require("jsonwebtoken")
 const app = express()
 
 app.use(express.json())
+app.use(express.urlencoded({ extended: true })); //Takes out query parameters from URL on Postman
 
 const PORT = process.env.PORT
 
@@ -30,21 +31,53 @@ app.post('/api/register-user', async (req, res) => {
 
   if(!username || !email || !password) {
     res.status(400).json({message: "Please enter your credentials"})
-  }else{
-    res.status(201).json({message: 'User registered'})
+  }
+
+  //Check if user exists
+  const userExists = await User.findOne({email})
+
+  if(userExists) {
+    res.status(400).json({message: "User already exists"})
   }
 
   const salt = await bcrypt.genSalt(12)
   const hashedPassword = await bcrypt.hash(password, salt)
 
   //Create User
-  const user = awa
+  const user = await User.create({
+    username,
+    email,
+    password: hashedPassword
+  })
+
+  if(user) {
+    res.status(201).json({
+      _id: user.id,
+      username: user.username,
+      email: user.email,
+      password: user.password //testing to confirm password hashing 
+    })
+  } else {
+    res.status(400).json({message: 'Invalid user data'})
+  }
+
+
 
 })
 
 //Login User
 app.post('/api/login-user', async (req, res) => {
-  res.json({message: 'Login Successful'})
+  const {email, password} = req.body
+  const user = await User.findOne({email})
+  if(user && (await bcrypt.compare(password, user.password))) {
+    res.status(200).json({
+      _id: user.id,
+      username: user.username,
+      email: user.email,
+    })
+  } else {
+    res.status(400).json({message: "Invalid Login Details"})
+  }
   
 })
 

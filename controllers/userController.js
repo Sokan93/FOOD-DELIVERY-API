@@ -32,7 +32,8 @@ const registerUser = async (req, res) => {
       _id: user.id,
       username: user.username,
       email: user.email,
-      password: user.password //testing to confirm password hashing 
+      password: user.password, //testing to confirm password hashing 
+      token: generateToken(user._id),
     })
   } else {
     res.status(400).json({message: 'Invalid user data'})
@@ -51,6 +52,12 @@ const loginUser = async(req, res) => {
   } else {
     res.status(400).json({message: "Invalid Login Details"})
   }
+}
+
+const generateToken = (id) => {
+  return jwt.sign({id}, process.env.JWT_SECRET, {
+    expiresIn: '30d',
+  })
 }
 
 module.exports = {
